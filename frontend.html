@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Billing System</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f4f4;
+        }
+
+        .container {
+            width: 85%;
+            margin: 30px auto;
+            background: #fff;
+            padding: 25px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h2
+         {
+            text-align: center;
+        }
+
+        input {
+            padding: 6px;
+            margin: 5px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .product-row {
+            margin-bottom: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+        }
+
+        .summary {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .denomination-box {
+            margin: 4px 0;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .btn-green {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+
+        .btn-gray {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- PAGE 1 -->
+        <div id="page1">
+
+            <h2>Billing Page</h2>
+
+            <div class="section">
+                <label>Customer Email:</label>
+                <input type="email" id="customerEmail" required>
+            </div>
+
+            <div class="section">
+                <h3>Bill Section</h3>
+                <div id="productsContainer"></div>
+                <button onclick="addProductRow()">Add New</button>
+            </div>
+
+            <hr>
+
+            <div class="section">
+                <h3>Available Denominations (Shop)</h3>
+
+                <div class="denomination-box">500 : <input type="number" id="denom500" value="5"></div>
+                <div class="denomination-box">50  : <input type="number" id="denom50" value="5"></div>
+                <div class="denomination-box">20  : <input type="number" id="denom20" value="5"></div>
+                <div class="denomination-box">10  : <input type="number" id="denom10" value="5"></div>
+                <div class="denomination-box">5   : <input type="number" id="denom5" value="5"></div>
+                <div class="denomination-box">2   : <input type="number" id="denom2" value="5"></div>
+                <div class="denomination-box">1   : <input type="number" id="denom1" value="5"></div>
+            </div>
+
+            <div class="section">
+                <label>Cash Paid by Customer:</label>
+                <input type="number" id="paidAmount" required>
+            </div>
+
+            <button class="btn-green" onclick="generateBill()">Generate Bill</button>
+
+        </div>
+
+
+        <!-- PAGE 2 -->
+        <div id="page2" class="hidden">
+
+            <h2>Invoice</h2>
+
+            <p><b>Email:</b> <span id="invoiceEmail"></span></p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Unit Price</th>
+                        <th>Quantity</th>
+                        <th>Purchase Price</th>
+                        <th>Tax %</th>
+                        <th>Tax Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="invoiceTable"></tbody>
+            </table>
+
+            <div class="summary">
+                <p>Total without tax: <span id="totalWithoutTax"></span></p>
+                <p>Total tax payable: <span id="totalTax"></span></p>
+                <p>Net price of purchased items: <span id="netTotal"></span></p>
+                <p>Rounded down net price: <span id="roundedTotal"></span></p>
+                <p><b>Balance payable to customer: <span id="balance"></span></b></p>
+            </div>
+
+            <hr>
+
+            <h3>Balance Denomination</h3>
+            <div id="balanceDenoms"></div>
+
+            <br>
+            <button class="btn-gray" onclick="location.reload()">New Bill</button>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const API_URL = "http://127.0.0.1:8000";
+
+        function addProductRow() {
+
+            const container = document.getElementById("productsContainer");
+
+            const div = document.createElement("div");
+            div.classList.add("product-row");
+
+            div.innerHTML = `
+        Product ID:
+        <input type="number" class="productId" required>
+        Quantity:
+        <input type="number" class="quantity" required>
+    `;
+
+            container.appendChild(div);
+        }
+
+        function generateBill() {
+
+            const email = document.getElementById("customerEmail").value;
+            const paidAmount = parseFloat(document.getElementById("paidAmount").value);
+
+            if (!email || !paidAmount) {
+                alert("Please fill all required fields");
+                return;
+            }
+
+            const rows = document.querySelectorAll(".product-row");
+
+            let items = [];
+
+            rows.forEach(row => {
+                const productId = row.querySelector(".productId").value;
+                const quantity = row.querySelector(".quantity").value;
+
+                if (productId && quantity) {
+                    items.push({
+                        product_id: parseInt(productId),
+                        quantity: parseInt(quantity)
+                    });
+                }
+            });
+
+            if (items.length === 0) {
+                alert("Add at least one product");
+                return;
+            }
+
+            const denominations = {
+                500: parseInt(document.getElementById("denom500").value),
+                50: parseInt(document.getElementById("denom50").value),
+                20: parseInt(document.getElementById("denom20").value),
+                10: parseInt(document.getElementById("denom10").value),
+                5: parseInt(document.getElementById("denom5").value),
+                2: parseInt(document.getElementById("denom2").value),
+                1: parseInt(document.getElementById("denom1").value)
+            };
+
+            fetch(`${API_URL}/generate-bill`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    customer_email: email,
+                    items: items,
+                    paid_amount: paidAmount,
+                    denominations: denominations
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+
+                    if (data.detail) {
+                        alert(data.detail);
+                        return;
+                    }
+
+                    loadInvoice(data);
+                })
+                .catch(err => alert("Error: " + err));
+        }
+
+        function loadInvoice(data) {
+
+            document.getElementById("page1").classList.add("hidden");
+            document.getElementById("page2").classList.remove("hidden");
+
+            document.getElementById("invoiceEmail").innerText = document.getElementById("customerEmail").value;
+
+            fetch(`${API_URL}/purchase/${data.purchase_id}`)
+                .then(res => res.json())
+                .then(items => {
+
+                    const table = document.getElementById("invoiceTable");
+                    table.innerHTML = "";
+
+                    let totalWithoutTax = 0;
+                    let totalTax = 0;
+
+                    items.forEach(item => {
+
+                        totalWithoutTax += item.total_price;
+                        totalTax += item.tax_amount;
+
+                        table.innerHTML += `
+                <tr>
+                    <td>${item.product_id}</td>
+                    <td>${item.unit_price}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.total_price}</td>
+                    <td>${item.tax_percent}</td>
+                    <td>${item.tax_amount}</td>
+                </tr>
+            `;
+                    });
+
+                    const netTotal = totalWithoutTax + totalTax;
+
+                    document.getElementById("totalWithoutTax").innerText = totalWithoutTax.toFixed(2);
+                    document.getElementById("totalTax").innerText = totalTax.toFixed(2);
+                    document.getElementById("netTotal").innerText = netTotal.toFixed(2);
+                    document.getElementById("roundedTotal").innerText = Math.floor(netTotal);
+                    document.getElementById("balance").innerText = data.balance;
+
+                    let denomHTML = "";
+                    for (let key in data.denominations) {
+                        denomHTML += `${key} : ${data.denominations[key]} <br>`;
+                    }
+                    document.getElementById("balanceDenoms").innerHTML = denomHTML;
+
+                });
+        }
+
+        addProductRow();
+
+    </script>
+
+</body>
+
+</html>

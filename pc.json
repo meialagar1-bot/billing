@@ -1,0 +1,81 @@
+{
+  "info": {
+    "name": "Billing System - Final",
+    "_postman_id": "billing-system-final-001",
+    "description": "Complete Billing System API with Denominations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+
+    {
+      "name": "Create Product",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Product A\",\n  \"stock\": 100,\n  \"price\": 100,\n  \"tax_percent\": 10\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/products",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["products"]
+        }
+      }
+    },
+
+    {
+      "name": "Generate Bill With Denominations",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_email\": \"test@gmail.com\",\n  \"items\": [\n    { \"product_id\": 1, \"quantity\": 2 }\n  ],\n  \"paid_amount\": 1000,\n  \"denominations\": {\n    \"500\": 5,\n    \"50\": 5,\n    \"20\": 5,\n    \"10\": 5,\n    \"5\": 5,\n    \"2\": 5,\n    \"1\": 5\n  }\n}"
+        },
+        "url": {
+          "raw": "http://127.0.0.1:8000/generate-bill",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["generate-bill"]
+        }
+      }
+    },
+
+    {
+      "name": "Get Purchase By ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://127.0.0.1:8000/purchase/1",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["purchase", "1"]
+        }
+      }
+    },
+
+    {
+      "name": "Get Purchases By Email",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://127.0.0.1:8000/purchases/test@gmail.com",
+          "protocol": "http",
+          "host": ["127", "0", "0", "1"],
+          "port": "8000",
+          "path": ["purchases", "test@gmail.com"]
+        }
+      }
+    }
+
+  ]
+}
